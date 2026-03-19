@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-app-service
+  namespace: python-app
+  labels:
+    app: python-app
+spec:
+  # Service type (ClusterIP for internal access)
+  # Change to LoadBalancer for external access
+  type: ClusterIP
+  
+  # Selector to route traffic to pods with matching labels
+  selector:
+    app: python-app
+  
+  # Ports
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  
+  # Session affinity (optional)
+  sessionAffinity: None

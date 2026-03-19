@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base resources
+bases:
+  - ../../base
+
+# Namespace for dev environment
+namespace: python-app-dev
+
+# Patches for dev environment
+patches:
+  # Patch deployment for dev-specific settings
+  - target:
+      kind: Deployment
+      name: python-app
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /metadata/namespace
+        value: python-app-dev
+
+# ConfigMap generator for dev-specific config
+configMapGenerator:
+  - name: python-app-config
+    behavior: merge
+    literals:
+      - APP_ENV=development
+      - DEBUG_MODE=true
+      - LOG_LEVEL=DEBUG

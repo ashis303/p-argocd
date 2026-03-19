@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: python-app
+  labels:
+    app: python-app
+    environment: base

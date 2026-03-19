@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-app
+  namespace: python-app
+  labels:
+    app: python-app
+    version: v1.0.0
+spec:
+  # Number of pod replicas (overridden in overlays)
+  replicas: 2
+  
+  # Selector to match pods
+  selector:
+    matchLabels:
+      app: python-app
+  
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: python-app
+        version: v1.0.0
+        # Label required for Azure Workload Identity
+        azure.workload.identity/use: "true"
+    
+    spec:
+      # Use the service account with Azure identity annotation
+      # This enables Workload Identity authentication to Key Vault
+      serviceAccountName: python-app-sa
+      
+      containers:
+      - name: python-app
+        # Container image from ACR
+        image: eventdrivenacr.azurecr.io/python-app:v1.0.0
+        
+        # Image pull policy
+        imagePullPolicy: Always
+        
+        # Container port
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: python-app-config
+        
+        # Additional environment variables from Kubernetes Secret
+        # (created by SecretProviderClass)
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: python-app-secrets
+              key: DATABASE_URL
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: python-app-secrets
+              key: API_KEY
+        
+        # Volume mounts for secrets
+        volumeMounts:
+        - name: secrets-store
+          mountPath: "/mnt/secrets"
+          readOnly: true
+        
+        # Resource requests and limits
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        
+        # Liveness probe (checks if app is alive)
+        # If this fails, Kubernetes will restart the pod
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness probe (checks if app is ready to serve traffic)
+        # If this fails, pod is removed from service endpoints
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      
+      # Volumes
+      volumes:
+      - name: secrets-store
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "azure-keyvault-python-app"

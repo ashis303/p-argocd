@@ -1,0 +1,27 @@
+# Development environment configuration values
+environment: dev
+replicaCount: 1
+debug: true
+
+image:
+  repository: eventdrivenacr.azurecr.io/python-app
+  tag: v1.0.0
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+autoscaling:
+  enabled: false

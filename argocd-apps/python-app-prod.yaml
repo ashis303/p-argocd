@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: python-app-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: prod
+    app: python-app
+
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/ashis303/p-argocd.git
+    targetRevision: main
+    path: apps/python-app/overlays/prod
+    kustomize:
+      images:
+        - eventdrivenacr.azurecr.io/python-app:v1.0.0
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: python-app-prod
+  
+  syncPolicy:
+    # Manual sync for production (requires approval)
+    automated: null
+    
+    syncOptions:
+      - CreateNamespace=true
+      - Validate=true
+      - ServerSideApply=true
+      - PruneLast=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

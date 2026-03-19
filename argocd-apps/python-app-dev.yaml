@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # Name of the ArgoCD application
+  name: python-app-dev
+  namespace: argocd
+  
+  # Finalizers ensure proper cleanup
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  
+  labels:
+    environment: dev
+    app: python-app
+
+spec:
+  # Project to which this application belongs
+  # 'default' is the built-in project, or create custom projects
+  project: default
+  
+  # Source repository and path
+  source:
+    # Git repository URL
+    repoURL: https://github.com/ashis303/p-argocd.git
+    
+    # Branch or tag to track
+    targetRevision: main
+    
+    # Path to the application manifests
+    path: apps/python-app/overlays/dev
+    
+    # Kustomize options (if using Kustomize)
+    kustomize:
+      # Enable image tag updates
+      images:
+        - eventdrivenacr.azurecr.io/python-app:v1.0.0
+  
+  # Destination cluster and namespace
+  destination:
+    # Kubernetes cluster (in-cluster or external)
+    # 'https://kubernetes.default.svc' refers to the cluster where ArgoCD is running
+    server: https://kubernetes.default.svc
+    
+    # Target namespace
+    namespace: python-app-dev
+  
+  # Sync policy
+  syncPolicy:
+    # Automated sync options
+    automated:
+      # Automatically sync when Git repository changes
+      prune: true  # Delete resources that no longer exist in Git
+      selfHeal: true  # Sync when cluster state differs from Git
+      allowEmpty: false  # Don't sync if no resources are found
+    
+    # Sync options
+    syncOptions:
+      # Create namespace if it doesn't exist
+      - CreateNamespace=true
+      
+      # Validate resources before applying
+      - Validate=true
+      
+      # Use server-side apply (recommended for CRDs)
+      - ServerSideApply=true
+      
+      # Prune last (delete resources after new ones are created)
+      - PruneLast=true
+    
+    # Retry strategy for failed syncs
+    retry:
+      limit: 5  # Maximum number of retries
+      backoff:
+        duration: 5s  # Initial retry delay
+        factor: 2  # Exponential backoff factor
+        maxDuration: 3m  # Maximum retry delay
+  
+  # Ignore differences in certain fields
+  ignoreDifferences:
+    # Ignore differences in webhook configurations (often managed by cert-manager)
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle

@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    # Use nginx ingress controller
+    kubernetes.io/ingress.class: nginx
+    
+    # Enable SSL passthrough (ArgoCD handles TLS)
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    
+    # Backend protocol is HTTPS
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    
+    # Optional: Enable cert-manager for automatic TLS certificates
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+    - host: argocd.yourdomain.com  # Replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443
+  # Uncomment if using cert-manager
+  # tls:
+  #   - hosts:
+  #       - argocd.yourdomain.com
+  #     secretName: argocd-tls-secret

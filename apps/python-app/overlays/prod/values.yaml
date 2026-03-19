@@ -1,0 +1,32 @@
+# Production environment configuration values
+environment: prod
+replicaCount: 3
+debug: false
+
+image:
+  repository: eventdrivenacr.azurecr.io/python-app
+  tag: v1.0.0
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: python-app.yourdomain.com
+  tls: true
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
