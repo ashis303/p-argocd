@@ -5,9 +5,10 @@ kind: Kustomization
 namespace: python-app
 
 # Common labels applied to all resources
-commonLabels:
-  app: python-app
-  managed-by: argocd
+labels:
+  - pairs:
+      app: python-app
+      managed-by: argocd
 
 # Resources to include
 resources:

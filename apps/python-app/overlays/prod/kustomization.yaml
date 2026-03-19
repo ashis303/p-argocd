@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base resources
-bases:
+resources:
   - ../../base
 
 # Namespace for prod environment
@@ -18,16 +18,21 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 3
-      - op: replace
-        path: /metadata/namespace
-        value: python-app-prod
 
-# ConfigMap generator for prod-specific config
-configMapGenerator:
-  - name: python-app-config
-    behavior: merge
-    literals:
-      - APP_ENV=production
-      - DEBUG_MODE=false
-      - LOG_LEVEL=WARNING
-      - MAX_CONNECTIONS=1000
+# Patch ConfigMap for prod-specific config
+  - target:
+      kind: ConfigMap
+      name: python-app-config
+    patch: |-
+      - op: replace
+        path: /data/APP_ENV
+        value: production
+      - op: replace
+        path: /data/DEBUG_MODE
+        value: "false"
+      - op: replace
+        path: /data/LOG_LEVEL
+        value: WARNING
+      - op: add
+        path: /data/MAX_CONNECTIONS
+        value: "1000"
